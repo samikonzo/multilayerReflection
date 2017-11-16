@@ -178,10 +178,12 @@ function calculateReflection(options){
 			r_k1m = reflection[k1m],
 			r2_k1m = Math.pow(r_k1m, 2),
 			cos_a = Math.cos(DegToRad( deg_alpha[k2] )),
-			cos_b = Math.cos(DegToRad( deg_beta[k2] ));
+			cos_b = Math.cos(DegToRad( deg_beta[k2] )),
+			reflection2;
 
-		reflection[k2m] = (r2_k2k1 + r2_k1m + 2 * r_k2k1 * r_k1m * cos_a) /
-						  (1 + r2_k2k1 * r2_k1m + 2 * r_k2k1 * r_k1m * cos_b)
+		reflection2 = (r2_k2k1 + r2_k1m + 2 * r_k2k1 * r_k1m * cos_a) /
+						  (1 + r2_k2k1 * r2_k1m + 2 * r_k2k1 * r_k1m * cos_b);
+		reflection[k2m] = Math.sqrt(reflection2 )						  
 
 		l(`reflection[${k2m}] : `, reflection[k2m].toFixed(3))	
 		l(' ')			  
@@ -192,7 +194,7 @@ function calculateReflection(options){
 		//index
 		var index = '0' + m 
 
-		Ri[lambda] = reflection[index] * reflection[index]
+		Ri[lambda] = reflection[index] * reflection[index];
 	}
 
 
