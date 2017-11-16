@@ -1,11 +1,16 @@
 'use strict'
 var l = console.log;
 
-var layer0 = { n : 1 },
-	layer1 = { n : 2.2 , h : 0.45},
-	layer2 = { n : 1.45 , h : 0.689},
-	layer3 = { n : 2.2 , h : 0.45},
-	layer4 = { n : 1.52};
+var base_lambda = 1,
+	layer0 = { n : 1 },
+	layer1 = { n : 2.2 ,  h: 0.45454545454545454545454545454545}, 
+	layer2 = { n : 1.45 , h: 0.68965517241379310344827586206897}, 
+	layer3 = { n : 2.2 ,  h: 0.45454545454545454545454545454545}, 
+	layer4 = { n : 1.52},
+
+	layer_n2 = { n : 1.45, h: 0.15/1.45};
+
+layer_n2 = { n : 2.2, h: 0.15/2.2};
 
 
 var options = {
@@ -19,8 +24,22 @@ var options = {
 
 	lambdaStart : 1,
 	lambdaEnd : 1,
-	lambdaDelta : 10,
+	lambdaDelta : .1,
 }
+
+
+options = {
+	layers: [
+		layer0,
+		layer_n2,
+		layer4,
+	],
+
+	lambdaStart : .4,
+	lambdaEnd : .75,
+	lambdaDelta : .05,
+}
+
 
 calculateReflection(options)
 
@@ -41,11 +60,11 @@ function calculateReflection(options){
 		deg_gama = {}, // γ
 		Ri = {};
 
-	const PI = Math.PI;//180;//Math.PI;	
+	const PI = Math.PI;;	
 
 	//calcualte reflection for all wavelength
 	for(var lambda = lambdaStart; lambda <= lambdaEnd; lambda += lambdaDelta){
-		l(lambda)
+		l(lambda + 'мкм')
 
 		//zeroing out global variables
 		reflection = {}, // r
@@ -66,21 +85,18 @@ function calculateReflection(options){
 			calc_multipleReflection(k);
 		}
 
-		/*for(var ind in reflection){
-			l(`${ind} : ${reflection[ind]}`)
-		}*/
-		l('results : ')
-		l('24 : ',reflection['24'].toFixed(3))
-		l('14 : ',reflection['14'].toFixed(3))
-		l('04 : ',reflection['04'].toFixed(3))
-
 		calc_R(lambda);
 
 	}
 
 	//l(reflection)
 
-	l('Ri : ',Ri[1].toFixed(3))
+	//l('Ri : ',Ri[1].toFixed(3))
+	l(' ');l(' ');
+	l('results : ')
+	for(var key in Ri){
+		l((key*1000).toFixed(0), 'нм : ', (Ri[key]*100).toFixed(3))
+	}
 
 
 
@@ -92,17 +108,22 @@ function calculateReflection(options){
 
 
 		reflection[index] = Math.abs( (n1 - n2) / (n1 + n2));
+		//reflection[index] = (n1 - n2) / (n1 + n2);
 		deltaPhase[index] = n2 < n1 ? 0 : PI;
 
 		l(k, ' : ', k-2, k-1)
 		l(`reflection[${index}] : `, reflection[index].toFixed(3))
-		l(`deltaPhase[${index}] : `, deltaPhase[index].toFixed(3))
+		l(`deltaPhase[${index}] : `, (deltaPhase[index] / Math.PI).toFixed(1) + ' pi')
 	}
 
 
 	function calc_deg_gama(k){
 		var deltaPhaseIndex = '' + (k-1) + m; // ∆(k-1),m
 		deg_gama[k - 2] = deltaPhase[deltaPhaseIndex] - 4 * PI * layers[k-1].n * layers[k-1].h / lambda;
+
+		
+		l(`deltaPhase[${deltaPhaseIndex}] : ${(deltaPhase[deltaPhaseIndex]/Math.PI).toFixed(1)} pi`)
+		l(`deg_gama[${k-2}] : ${(deg_gama[k-2]/Math.PI).toFixed(1)} pi`);
 	}
 
 	function calc_tg_deltaPhase_and_deltaPhase(k){
@@ -118,15 +139,25 @@ function calculateReflection(options){
 			r_k2k1 = reflection[k2k1],
 			d_k2k1 = deltaPhase[k2k1],
 			deg_g_k2 = deg_gama[k2],
-			sin_g = Math.sin(DegToRad(deg_g_k2)),
-			cos_g = Math.cos(DegToRad(deg_g_k2)),
-			cos_d = Math.cos(DegToRad(d_k2k1));
+			//dont go to degree
+			//sin_g = Math.sin(DegToRad(deg_g_k2)),
+			//cos_g = Math.cos(DegToRad(deg_g_k2)),
+			//cos_d = Math.cos(DegToRad(d_k2k1));
+			sin_g = Math.sin(deg_g_k2),
+			cos_g = Math.cos(deg_g_k2),
+			cos_d = Math.cos(d_k2k1);
 
 
 		var tg = (r_k1m * (1 - Math.pow(r_k2k1, 2)) * sin_g) 
 				/ (r_k2k1 * (1 + Math.pow(r_k1m, 2)) *cos_d + r_k1m*(1 + Math.pow(r_k2k1, 2)) * cos_g);
 
-		deltaPhase[k2m] = RadToDeg(Math.atan(tg));
+		//dont go to degree
+		//deltaPhase[k2m] = RadToDeg(Math.atan(tg));
+		deltaPhase[k2m] = Math.atan(tg);
+
+
+		l(`tg : ${tg.toFixed(3)}`);
+		l(`arctg : ${(Math.atan(tg) / Math.PI).toFixed(3)} pi`)
 
 		//l(`deltaPhase[${k2m}] : ${deltaPhase[k2m]}`)		
 	}
@@ -145,6 +176,8 @@ function calculateReflection(options){
 		var beta = deltaPhase[k2k1] + deltaPhase[k1m] - (4 * PI * n * h)/lambda;
 
 		deg_beta[k2] = beta;
+
+		l(`beta : ${(beta / Math.PI).toFixed(1)} pi`)
 	}
 
 
@@ -161,6 +194,8 @@ function calculateReflection(options){
 		var alpha = -deltaPhase[k2k1] + deltaPhase[k1m] - (4 * PI * n * h)/lambda;
 
 		deg_alpha[k2] = alpha;
+
+		l(`alpha : ${(alpha / Math.PI).toFixed(1)} pi`)
 	}
 
 
@@ -177,13 +212,26 @@ function calculateReflection(options){
 			r2_k2k1 = Math.pow(r_k2k1, 2),
 			r_k1m = reflection[k1m],
 			r2_k1m = Math.pow(r_k1m, 2),
-			cos_a = Math.cos(DegToRad( deg_alpha[k2] )),
-			cos_b = Math.cos(DegToRad( deg_beta[k2] )),
+			//dont go to degree
+			//cos_a = Math.cos(DegToRad( deg_alpha[k2] )),
+			//cos_b = Math.cos(DegToRad( deg_beta[k2] )),
+			cos_a = Math.cos(deg_alpha[k2]),
+			cos_b = Math.cos(deg_beta[k2]),
 			reflection2;
 
 		reflection2 = (r2_k2k1 + r2_k1m + 2 * r_k2k1 * r_k1m * cos_a) /
 						  (1 + r2_k2k1 * r2_k1m + 2 * r_k2k1 * r_k1m * cos_b);
-		reflection[k2m] = Math.sqrt(reflection2 )						  
+		reflection[k2m] = Math.sqrt(reflection2)						  
+
+		//l('deg_alpha[k2] : ',(deg_alpha[k2] / Math.PI).toFixed(3) + ' pi')
+		//l('deg_beta[k2] : ',(deg_beta[k2] / Math.PI).toFixed(3) + ' pi')
+		l('cos_a : ', cos_a)
+		l('cos_b : ', cos_b)
+		
+		l(`r_k1m(r${k1m}) : `, r_k1m.toFixed(3))
+		l(`r2_k1m(r2${k1m}) : `, r2_k1m.toFixed(3))
+		l('r_k2k1 : ', r_k2k1.toFixed(3))
+		l('r2_k2k1 : ', r2_k2k1.toFixed(3))
 
 		l(`reflection[${k2m}] : `, reflection[k2m].toFixed(3))	
 		l(' ')			  
